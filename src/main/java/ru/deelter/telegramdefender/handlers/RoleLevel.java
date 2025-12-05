@@ -1,20 +1,23 @@
 package ru.deelter.telegramdefender.handlers;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberAdministrator;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
+@Builder
 @AllArgsConstructor
-public enum RoleLevel {
+public class RoleLevel {
 
-	NONE("Никто", false, false, false, false, false, false, false, false),
-	EDITOR("Редактор", false, true, true, false, true, false, true, false),
-	CURATOR("Куратор", false, true, true, false, true, true, true, true),
-	ADMIN("Админ", true, true, true, true, true, true, true, true);
+	public static final Map<String, RoleLevel> LEVELS = new HashMap<>();
 
+	private final String id;
 	private final String name;
 	private final boolean canChangeInformation;
 	private final boolean canPostMessages;
@@ -26,7 +29,7 @@ public enum RoleLevel {
 	private final boolean canPromoteMembers;
 
 	@Contract(pure = true)
-	public @NotNull String getFormatted() {
+	public @NotNull String getFormattedPermissions() {
 		return "Изменять профиль канала: " + (canChangeInformation ? "Да" : "Нет") + "\n" +
 				"Публиковать сообщения: " + (canPostMessages ? "Да" : "Нет") + "\n" +
 				"Редактировать сообщения: " + (canEditMessages ? "Да" : "Нет") + "\n" +
@@ -49,6 +52,10 @@ public enum RoleLevel {
 		Boolean adminCanPinMessages = admin.getCanPinMessages();
 		Boolean adminCanPromoteMembers = admin.getCanPromoteMembers();
 
+		/*
+			Я честно не работал с ТГ API и не знаю, может ли тут прийти null.
+			Некоторые миссают этот момент, но пусть лучше так.
+		 */
 		boolean aChangeInfo = Boolean.TRUE.equals(adminCanChangeInfo);
 		boolean aPost = Boolean.TRUE.equals(adminCanPostMessages);
 		boolean aEdit = Boolean.TRUE.equals(adminCanEditMessages);
@@ -66,5 +73,9 @@ public enum RoleLevel {
 		if (!canRestrictMembers && aRestrict) return true;
 		if (!canPinMessages && aPin) return true;
 		return !canPromoteMembers && aPromote;
+	}
+
+	public void register() {
+		LEVELS.put(id, this);
 	}
 }

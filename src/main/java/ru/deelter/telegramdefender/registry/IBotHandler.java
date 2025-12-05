@@ -10,6 +10,6 @@ public interface IBotHandler {
 	void execute(@NotNull TelegramBot bot, @NotNull Update update);
 
 	default void register() {
-		Main.telegramBot.getHandlerRegistry().register(this);
+		Main.getTelegramBot().getHandlerRegistry().register(this);
 	}
 }

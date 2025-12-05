@@ -1,0 +1,43 @@
+{
+	"token": "8470589141:AAEDqwWoq_K-cYdhbieCFu2x2e7iX4CW8QE",
+	"username": "channeldefendbot",
+	"debug": true,
+	"roles": [
+		{
+			"id": "editor",
+			"name": "Редактор",
+			"canChangeInformation": false,
+			"canPostMessages": true,
+			"canEditMessages": true,
+			"canDeleteMessages": false,
+			"canInviteUsers": true,
+			"canRestrictMembers": false,
+			"canPinMessages": true,
+			"canPromoteMembers": false
+		},
+		{
+			"id": "curator",
+			"name": "Куратор",
+			"canChangeInformation": false,
+			"canPostMessages": true,
+			"canEditMessages": true,
+			"canDeleteMessages": false,
+			"canInviteUsers": true,
+			"canRestrictMembers": false,
+			"canPinMessages": true,
+			"canPromoteMembers": true
+		},
+		{
+			"id": "admin",
+			"name": "Админ",
+			"canChangeInformation": false,
+			"canPostMessages": true,
+			"canEditMessages": true,
+			"canDeleteMessages": false,
+			"canInviteUsers": true,
+			"canRestrictMembers": true,
+			"canPinMessages": true,
+			"canPromoteMembers": true
+		}
+	]
+}

@@ -17,68 +17,42 @@ import ru.deelter.telegramdefender.registry.IBotHandler;
 
 public class RoleAddCommandHandler implements IBotHandler {
 
-
-	private static @NotNull PromoteChatMember createPromoteChatMemberRequest(String channelToken, @NotNull RoleLevel level, Long targetUserId) {
-		PromoteChatMember promote = new PromoteChatMember();
-		promote.setChatId(channelToken);
-		promote.setUserId(targetUserId);
-
-		promote.setCanChangeInformation(level.isCanChangeInformation());
-		promote.setCanPostMessages(level.isCanPostMessages());
-		promote.setCanEditMessages(level.isCanEditMessages());
-		promote.setCanDeleteMessages(level.isCanDeleteMessages());
-		promote.setCanInviteUsers(level.isCanInviteUsers());
-		promote.setCanRestrictMembers(level.isCanRestrictMembers());
-		promote.setCanPinMessages(level.isCanPinMessages());
-		promote.setCanPromoteMembers(level.isCanPromoteMembers());
-		return promote;
-	}
-
-	private static boolean isValidAdmin(@NotNull ChatMember member, RoleLevel level) {
-		if (member instanceof ChatMemberAdministrator admin) {
-			if (Boolean.FALSE.equals(admin.getCanPromoteMembers())) {
-				return false;
-			}
-			return level.isLowerThan(admin);
-		}
-		return member instanceof ChatMemberOwner;
-	}
-
-	private static boolean isAdminWithPromote(@NotNull ChatMember member) {
-		if (member instanceof ChatMemberAdministrator admin) {
-			return admin.getCanPromoteMembers();
-		}
-		return member instanceof ChatMemberOwner;
-	}
-
+	@SneakyThrows
 	@Override
 	public void execute(@NotNull TelegramBot bot, @NotNull Update update) {
-		if (update.hasMessage() && update.getMessage().hasText()) {
-			Message message = update.getMessage();
-			String text = message.getText().trim();
+		if (!update.hasMessage()) return;
 
-			String[] parts = text.split("\\s+");
-			if (parts.length < 4) return;
+		Message message = update.getMessage();
+		if (!message.hasText()) return;
 
-			String command = parts[0].toLowerCase();
-			String user = parts[1];    // userId
-			String channel = parts[2]; // chatId
-			RoleLevel level = RoleLevel.valueOf(parts[3].toUpperCase()); // role
+		String text = message.getText().trim();
+		String[] parts = text.split("\\s+");
+		if (parts.length < 4) return;
 
-			if (!command.equalsIgnoreCase("/setrole")) return;
+		String command = parts[0].toLowerCase();
+		String userId = parts[1];
+		String channelId = parts[2];
+		RoleLevel roleLevel = RoleLevel.LEVELS.get(parts[3].toUpperCase());
 
-			setRole(update, bot, user, channel, level);
+		if (roleLevel == null) {
+			bot.executeAsync(SendMessage.builder()
+					.chatId(message.getChatId())
+					.text(String.format("Роль %s не найдена.", parts[3]))
+					.build());
+			return;
 		}
+
+		if (!command.equalsIgnoreCase("/setrole")) return;
+		if (!checkPermissions(bot, channelId, message, roleLevel)) return;
+
+		setRole(update, bot, userId, channelId, roleLevel);
 	}
 
 	@SneakyThrows
-	private void setRole(@NotNull Update update, @NotNull TelegramBot bot, String userToken, String channelToken, @NotNull RoleLevel level) {
-		Message message = update.getMessage();
-		Long executorId = message.getFrom().getId();
-
+	private boolean checkPermissions(TelegramBot bot, String channelId, @NotNull Message message, RoleLevel level) {
 		GetChatMember getExecutorMember = new GetChatMember();
-		getExecutorMember.setChatId(channelToken);
-		getExecutorMember.setUserId(executorId);
+		getExecutorMember.setChatId(channelId);
+		getExecutorMember.setUserId(message.getFrom().getId());
 		ChatMember executorMember;
 		try {
 			executorMember = bot.execute(getExecutorMember);
@@ -87,19 +61,19 @@ public class RoleAddCommandHandler implements IBotHandler {
 					.chatId(message.getChatId())
 					.text("Не удалось получить информацию об участнике (исполнитель). Проверьте, верно ли указан канал.")
 					.build());
-			return;
+			return false;
 		}
 		if (executorMember == null || !isValidAdmin(executorMember, level)) {
 			bot.executeAsync(SendMessage.builder()
 					.chatId(message.getChatId())
 					.text("У вас нет права назначать админов в указанном канале.")
 					.build());
-			return;
+			return false;
 		}
 
 		Long botId = bot.getMe().getId();
 		GetChatMember getBotMember = new GetChatMember();
-		getBotMember.setChatId(channelToken);
+		getBotMember.setChatId(channelId);
 		getBotMember.setUserId(botId);
 		ChatMember botMember;
 		try {
@@ -109,7 +83,7 @@ public class RoleAddCommandHandler implements IBotHandler {
 					.chatId(message.getChatId())
 					.text("Не удалось получить информацию о боте в указанном канале.")
 					.build());
-			return;
+			return false;
 		}
 
 		if (botMember == null || !isAdminWithPromote(botMember)) {
@@ -117,10 +91,16 @@ public class RoleAddCommandHandler implements IBotHandler {
 					.chatId(message.getChatId())
 					.text("Боту необходимо быть администратором канала с правом назначать админов (can_promote_members).")
 					.build());
-			return;
+			return false;
 		}
+		return true;
+	}
 
+	@SneakyThrows
+	private void setRole(@NotNull Update update, @NotNull TelegramBot bot, String userToken, String channelToken, @NotNull RoleLevel level) {
+		Message message = update.getMessage();
 		Long targetUserId = Long.parseLong(userToken);
+
 		PromoteChatMember promote = createPromoteChatMemberRequest(channelToken, level, targetUserId);
 		bot.execute(promote);
 
@@ -139,7 +119,40 @@ public class RoleAddCommandHandler implements IBotHandler {
 						chatMember.getUser().getUserName(),
 						level.getName(),
 						channelChat.getUserName(),
-						level.getFormatted()))
+						level.getFormattedPermissions()))
 				.build());
+	}
+
+	private @NotNull PromoteChatMember createPromoteChatMemberRequest(String channelToken, @NotNull RoleLevel level, Long targetUserId) {
+		PromoteChatMember promote = new PromoteChatMember();
+		promote.setChatId(channelToken);
+		promote.setUserId(targetUserId);
+
+		promote.setCanChangeInformation(level.isCanChangeInformation());
+		promote.setCanPostMessages(level.isCanPostMessages());
+		promote.setCanEditMessages(level.isCanEditMessages());
+		promote.setCanDeleteMessages(level.isCanDeleteMessages());
+		promote.setCanInviteUsers(level.isCanInviteUsers());
+		promote.setCanRestrictMembers(level.isCanRestrictMembers());
+		promote.setCanPinMessages(level.isCanPinMessages());
+		promote.setCanPromoteMembers(level.isCanPromoteMembers());
+		return promote;
+	}
+
+	private boolean isValidAdmin(@NotNull ChatMember member, RoleLevel level) {
+		if (member instanceof ChatMemberAdministrator admin) {
+			if (Boolean.FALSE.equals(admin.getCanPromoteMembers())) {
+				return false;
+			}
+			return level.isLowerThan(admin);
+		}
+		return member instanceof ChatMemberOwner;
+	}
+
+	private boolean isAdminWithPromote(@NotNull ChatMember member) {
+		if (member instanceof ChatMemberAdministrator admin) {
+			return admin.getCanPromoteMembers();
+		}
+		return member instanceof ChatMemberOwner;
 	}
 }
