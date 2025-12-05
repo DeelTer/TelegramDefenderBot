@@ -1,6 +1,6 @@
 {
-	"token": "8470589141:AAEDqwWoq_K-cYdhbieCFu2x2e7iX4CW8QE",
-	"username": "channeldefendbot",
+	"token": "yourBotTokenHere",
+	"username": "username_bot",
 	"debug": true,
 	"roles": [
 		{
@@ -14,18 +14,6 @@
 			"canRestrictMembers": false,
 			"canPinMessages": true,
 			"canPromoteMembers": false
-		},
-		{
-			"id": "curator",
-			"name": "Куратор",
-			"canChangeInformation": false,
-			"canPostMessages": true,
-			"canEditMessages": true,
-			"canDeleteMessages": false,
-			"canInviteUsers": true,
-			"canRestrictMembers": false,
-			"canPinMessages": true,
-			"canPromoteMembers": true
 		},
 		{
 			"id": "admin",
