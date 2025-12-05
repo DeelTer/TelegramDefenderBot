@@ -44,7 +44,7 @@ public class RoleAddCommandHandler implements IBotHandler {
 		return member instanceof ChatMemberOwner;
 	}
 
-	private static boolean isAdminWithPromote(@NotNull ChatMember member, RoleLevel level) {
+	private static boolean isAdminWithPromote(@NotNull ChatMember member) {
 		if (member instanceof ChatMemberAdministrator admin) {
 			return admin.getCanPromoteMembers();
 		}
@@ -112,7 +112,7 @@ public class RoleAddCommandHandler implements IBotHandler {
 			return;
 		}
 
-		if (botMember == null || !isAdminWithPromote(botMember, level)) {
+		if (botMember == null || !isAdminWithPromote(botMember)) {
 			bot.executeAsync(SendMessage.builder()
 					.chatId(message.getChatId())
 					.text("Боту необходимо быть администратором канала с правом назначать админов (can_promote_members).")
