@@ -76,6 +76,6 @@ public class RoleLevel {
 	}
 
 	public void register() {
-		LEVELS.put(id, this);
+		LEVELS.put(id.toUpperCase(), this);
 	}
 }

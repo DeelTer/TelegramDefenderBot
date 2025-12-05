@@ -75,6 +75,7 @@ public class RoleAddCommandHandler implements IBotHandler {
 		GetChatMember getBotMember = new GetChatMember();
 		getBotMember.setChatId(channelId);
 		getBotMember.setUserId(botId);
+
 		ChatMember botMember;
 		try {
 			botMember = bot.execute(getBotMember);
@@ -98,7 +99,6 @@ public class RoleAddCommandHandler implements IBotHandler {
 
 	@SneakyThrows
 	private void setRole(@NotNull Update update, @NotNull TelegramBot bot, String userToken, String channelToken, @NotNull RoleLevel level) {
-		Message message = update.getMessage();
 		Long targetUserId = Long.parseLong(userToken);
 
 		PromoteChatMember promote = createPromoteChatMemberRequest(channelToken, level, targetUserId);
