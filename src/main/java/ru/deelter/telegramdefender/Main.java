@@ -33,7 +33,7 @@ public class Main {
 
 		telegramBot.getHandlerRegistry().registerAll(List.of(
 				new RoleAddCommandHandler(),
-                new MembersRemoveDefenderHandler(),
+				new MembersRemoveDefenderHandler(),
 				new MemoryCommandHandler()
 		));
 	}

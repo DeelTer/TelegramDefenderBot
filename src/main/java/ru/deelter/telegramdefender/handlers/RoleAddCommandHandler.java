@@ -18,6 +18,32 @@ import ru.deelter.telegramdefender.registry.IBotHandler;
 public class RoleAddCommandHandler implements IBotHandler {
 
 
+	private static @NotNull PromoteChatMember createPromoteChatMemberRequest(String channelToken, @NotNull RoleLevel level, Long targetUserId) {
+		PromoteChatMember promote = new PromoteChatMember();
+		promote.setChatId(channelToken);
+		promote.setUserId(targetUserId);
+
+		promote.setCanChangeInformation(level.isCanChangeInformation());
+		promote.setCanPostMessages(level.isCanPostMessages());
+		promote.setCanEditMessages(level.isCanEditMessages());
+		promote.setCanDeleteMessages(level.isCanDeleteMessages());
+		promote.setCanInviteUsers(level.isCanInviteUsers());
+		promote.setCanRestrictMembers(level.isCanRestrictMembers());
+		promote.setCanPinMessages(level.isCanPinMessages());
+		promote.setCanPromoteMembers(level.isCanPromoteMembers());
+		return promote;
+	}
+
+	private static boolean isAdminWithPromote(@NotNull ChatMember member, RoleLevel level) {
+		if (member instanceof ChatMemberAdministrator admin) {
+			if (Boolean.FALSE.equals(admin.getCanPromoteMembers())) {
+				return false;
+			}
+			return level.isLowerThan(admin);
+		}
+		return member instanceof ChatMemberOwner;
+	}
+
 	@Override
 	public void execute(@NotNull TelegramBot bot, @NotNull Update update) {
 		if (update.hasMessage() && update.getMessage().hasText()) {
@@ -56,7 +82,7 @@ public class RoleAddCommandHandler implements IBotHandler {
 					.build());
 			return;
 		}
-		if (executorMember == null || !isAdminWithPromote(executorMember)) {
+		if (executorMember == null || !isAdminWithPromote(executorMember, level)) {
 			bot.executeAsync(SendMessage.builder()
 					.chatId(message.getChatId())
 					.text("У вас нет права назначать админов в указанном канале.")
@@ -79,7 +105,7 @@ public class RoleAddCommandHandler implements IBotHandler {
 			return;
 		}
 
-		if (botMember == null || !isAdminWithPromote(botMember)) {
+		if (botMember == null || !isAdminWithPromote(botMember, level)) {
 			bot.executeAsync(SendMessage.builder()
 					.chatId(message.getChatId())
 					.text("Боту необходимо быть администратором канала с правом назначать админов (can_promote_members).")
@@ -108,28 +134,5 @@ public class RoleAddCommandHandler implements IBotHandler {
 						channelChat.getUserName(),
 						level.getFormatted()))
 				.build());
-	}
-
-	private static @NotNull PromoteChatMember createPromoteChatMemberRequest(String channelToken, @NotNull RoleLevel level, Long targetUserId) {
-		PromoteChatMember promote = new PromoteChatMember();
-		promote.setChatId(channelToken);
-		promote.setUserId(targetUserId);
-
-		promote.setCanChangeInformation(level.isCanChangeInformation());
-		promote.setCanPostMessages(level.isCanPostMessages());
-		promote.setCanEditMessages(level.isCanEditMessages());
-		promote.setCanDeleteMessages(level.isCanDeleteMessages());
-		promote.setCanInviteUsers(level.isCanInviteUsers());
-		promote.setCanRestrictMembers(level.isCanRestrictMembers());
-		promote.setCanPinMessages(level.isCanPinMessages());
-		promote.setCanPromoteMembers(level.isCanPromoteMembers());
-		return promote;
-	}
-
-	private static boolean isAdminWithPromote(@NotNull ChatMember member) {
-		if (member instanceof ChatMemberAdministrator admin) {
-			return Boolean.TRUE.equals(admin.getCanPromoteMembers());
-		}
-		return member instanceof ChatMemberOwner;
 	}
 }

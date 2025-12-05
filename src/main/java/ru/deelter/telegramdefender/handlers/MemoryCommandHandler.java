@@ -11,6 +11,8 @@ import ru.deelter.telegramdefender.registry.IBotHandler;
 public class MemoryCommandHandler implements IBotHandler {
 
 
+	private final Runtime RUNTIME = Runtime.getRuntime();
+
 	@SneakyThrows
 	@Override
 	public void execute(@NotNull TelegramBot bot, @NotNull Update update) {
@@ -21,12 +23,10 @@ public class MemoryCommandHandler implements IBotHandler {
 
 		String memory = getRamStats();
 		bot.execute(SendMessage.builder()
-						.chatId(message.getChatId())
-						.text("Оперативная память: " + memory)
+				.chatId(message.getChatId())
+				.text("Оперативная память: " + memory)
 				.build());
 	}
-
-	private final Runtime RUNTIME = Runtime.getRuntime();
 
 	private long getTotal() {
 		return RUNTIME.totalMemory() / 1024 / 1024;
