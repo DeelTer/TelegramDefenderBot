@@ -29,7 +29,6 @@
 		{
 			"id": "admin",
 			"name": "Админ",
-			"bypass": true,
 			"canChangeInformation": false,
 			"canPostMessages": true,
 			"canEditMessages": true,
