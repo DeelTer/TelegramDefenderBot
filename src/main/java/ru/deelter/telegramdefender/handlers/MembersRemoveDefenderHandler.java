@@ -3,65 +3,52 @@ package ru.deelter.telegramdefender.handlers;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.PromoteChatMember;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.UnbanChatMember;
+import org.telegram.telegrambots.meta.api.objects.ChatMemberUpdated;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import ru.deelter.telegramdefender.TelegramBot;
 import ru.deelter.telegramdefender.registry.IBotHandler;
 
-public class RoleAddCommandHandler implements IBotHandler {
-
+public class MembersRemoveDefenderHandler implements IBotHandler {
 
 	@SneakyThrows
 	@Override
 	public void execute(@NotNull TelegramBot bot, @NotNull Update update) {
-		if (update.hasMessage() && update.getMessage().hasText()) {
-			Message message = update.getMessage();
-			String text = message.getText().trim();
+		if (!update.hasChatMember()) return;
 
-			String[] parts = text.split("\\s+");
-			if (parts.length < 4) return;
+		ChatMemberUpdated memberUpdated = update.getChatMember();
+		if (memberUpdated == null) return;
 
-			String command = parts[0].toLowerCase();
-			String user = parts[1];    // userId
-			String channel = parts[2]; // chatId
-			RoleLevel level = RoleLevel.valueOf(parts[3].toUpperCase()); // role
+		ChatMember newChatMember = memberUpdated.getNewChatMember();
+		if (!newChatMember.getStatus().equalsIgnoreCase("kicked")) return;
+//		if (newChatMember.getUser().getIsBot()) return;
 
-			if (!command.equalsIgnoreCase("/setrole")) return;
+		User initiatorUser = memberUpdated.getFrom();
+		if (initiatorUser.getId().equals(bot.getMe().getId())) return;
 
-			setRole(update, bot, user, channel, level);
+		PromoteChatMember demote = new PromoteChatMember();
+		demote.setChatId(memberUpdated.getChat().getId().toString());
+		demote.setUserId(initiatorUser.getId());
 
-			bot.executeAsync(SendMessage.builder()
-					.chatId(update.getMessage().getChatId())
-					.text(String.format("Вы установили админом %s в чате %s", user, channel))
-					.build());
-		}
-	}
+		demote.setCanChangeInformation(false);
+		demote.setCanPostMessages(false);
+		demote.setCanEditMessages(false);
+		demote.setCanDeleteMessages(false);
+		demote.setCanInviteUsers(false);
+		demote.setCanRestrictMembers(false);
+		demote.setCanPinMessages(false);
+		demote.setCanPromoteMembers(false);
 
-	@SneakyThrows
-	private void setRole(@NotNull Update update, @NotNull TelegramBot bot, String userToken, String channelToken, @NotNull RoleLevel level) {
-		Long targetUserId = Long.parseLong(userToken);
-		PromoteChatMember promote = createPromoteChatMemberRequest(channelToken, level, targetUserId);
-		bot.execute(promote);
-		bot.executeAsync(SendMessage.builder()
-				.chatId(update.getMessage().getChatId())
-				.text(String.format("Вы успешно назначили %s на роль %s в канале %s", userToken, level.name(), channelToken))
-				.build());
-	}
+		bot.executeAsync(demote);
+		System.out.printf("Deleted %s from channel because raid kick%n", initiatorUser.getUserName());
 
-	private static @NotNull PromoteChatMember createPromoteChatMemberRequest(String channelToken, @NotNull RoleLevel level, Long targetUserId) {
-		PromoteChatMember promote = new PromoteChatMember();
-		promote.setChatId(channelToken);
-		promote.setUserId(targetUserId);
-
-		promote.setCanChangeInformation(level.isCanChangeInformation());
-		promote.setCanPostMessages(level.isCanPostMessages());
-		promote.setCanEditMessages(level.isCanEditMessages());
-		promote.setCanDeleteMessages(level.isCanDeleteMessages());
-		promote.setCanInviteUsers(level.isCanInviteUsers());
-		promote.setCanRestrictMembers(level.isCanRestrictMembers());
-		promote.setCanPinMessages(level.isCanPinMessages());
-		promote.setCanPromoteMembers(level.isCanPromoteMembers());
-		return promote;
+		UnbanChatMember unban = UnbanChatMember.builder()
+				.chatId(memberUpdated.getChat().getId())
+				.userId(newChatMember.getUser().getId())
+				.build();
+		System.out.printf("Unban user %s", newChatMember.getUser().getUserName());
+		bot.execute(unban);
 	}
 }

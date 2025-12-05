@@ -1,4 +1,4 @@
-package ru.deelter.telegramdefender.managers;
+package ru.deelter.telegramdefender.registry;
 
 import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -10,6 +10,6 @@ public interface IBotHandler {
 	void execute(@NotNull TelegramBot bot, @NotNull Update update);
 
 	default void register() {
-		Main.BOT.getHandlerManager().register(this);
+		Main.telegramBot.getHandlerRegistry().register(this);
 	}
 }

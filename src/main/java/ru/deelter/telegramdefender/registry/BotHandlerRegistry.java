@@ -1,4 +1,4 @@
-package ru.deelter.telegramdefender.managers;
+package ru.deelter.telegramdefender.registry;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
