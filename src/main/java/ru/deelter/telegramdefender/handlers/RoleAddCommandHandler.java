@@ -34,12 +34,19 @@ public class RoleAddCommandHandler implements IBotHandler {
 		return promote;
 	}
 
-	private static boolean isAdminWithPromote(@NotNull ChatMember member, RoleLevel level) {
+	private static boolean isValidAdmin(@NotNull ChatMember member, RoleLevel level) {
 		if (member instanceof ChatMemberAdministrator admin) {
 			if (Boolean.FALSE.equals(admin.getCanPromoteMembers())) {
 				return false;
 			}
 			return level.isLowerThan(admin);
+		}
+		return member instanceof ChatMemberOwner;
+	}
+
+	private static boolean isAdminWithPromote(@NotNull ChatMember member, RoleLevel level) {
+		if (member instanceof ChatMemberAdministrator admin) {
+			return admin.getCanPromoteMembers();
 		}
 		return member instanceof ChatMemberOwner;
 	}
@@ -82,7 +89,7 @@ public class RoleAddCommandHandler implements IBotHandler {
 					.build());
 			return;
 		}
-		if (executorMember == null || !isAdminWithPromote(executorMember, level)) {
+		if (executorMember == null || !isValidAdmin(executorMember, level)) {
 			bot.executeAsync(SendMessage.builder()
 					.chatId(message.getChatId())
 					.text("У вас нет права назначать админов в указанном канале.")
